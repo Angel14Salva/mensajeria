@@ -202,7 +202,8 @@ async function openChat(convId, username) {
         <div class="chat-top-name">${username}</div>
       </div>
       <div class="messages-area" id="messagesArea"></div>
-      <div class="input-row" style="position:relative;">
+      <div id="emojiPickerWrap" style="display:none; border-top:0.5px solid var(--border);"></div>
+      <div class="input-row">
         <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">😊</button>
         <input type="text" class="msg-input" id="msgInput" placeholder="Escribe un mensaje..." autocomplete="off"/>
         <button class="send-btn" onclick="sendMessage()" aria-label="Enviar">
@@ -211,7 +212,6 @@ async function openChat(convId, username) {
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
-        <div id="emojiPickerWrap" style="display:none;position:absolute;top:56px;left:0;right:0;z-index:100;"></div>
       </div>
     </div>
   `;
@@ -311,7 +311,7 @@ function setupEmojiPicker() {
     e.stopPropagation();
     if (!picker) {
       picker = document.createElement('emoji-picker');
-      picker.style.cssText = 'width:100%;--num-columns:8;--emoji-size:1.4rem;';
+      picker.style.cssText = 'width:100%;--num-columns:7;--emoji-size:1.3rem;height:220px;';
       wrap.appendChild(picker);
       picker.addEventListener('emoji-click', (ev) => {
         const input = document.getElementById('msgInput');
