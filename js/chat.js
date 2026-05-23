@@ -8,19 +8,6 @@ async function init() {
   if (!session) { window.location.href = 'index.html'; return; }
   currentUser = session.user;
 
-let inactivityTimer;
-function resetTimer() {
-  clearTimeout(inactivityTimer);
-  inactivityTimer = setTimeout(async () => {
-    await supabaseClient.auth.signOut();
-    window.location.href = 'index.html';
-  }, 30 * 60 * 1000);
-}
-['click', 'keydown', 'mousemove', 'touchstart'].forEach(e => {
-  document.addEventListener(e, resetTimer, true);
-});
-resetTimer();
-
   // Load username from profile
   const { data: profile } = await supabaseClient
     .from('profiles')
@@ -188,6 +175,11 @@ async function startConversation(otherUserId, otherUsername) {
 }
 
 // ─── Open Chat ───────────────────────────────────────────────────────────────
+function goBack() {
+  document.querySelector('.sidebar').classList.remove('hidden-mobile');
+  document.getElementById('mainArea').classList.remove('visible-mobile');
+}
+
 async function openChat(convId, username) {
   currentConversationId = convId;
 
@@ -195,10 +187,17 @@ async function openChat(convId, username) {
     el.classList.toggle('active', el.dataset.convId === String(convId));
   });
 
+  // Mobile: show chat, hide sidebar
+  document.querySelector('.sidebar').classList.add('hidden-mobile');
+  document.getElementById('mainArea').classList.add('visible-mobile');
+
   const main = document.getElementById('mainArea');
   main.innerHTML = `
     <div class="chat-view">
       <div class="chat-top">
+        <button class="back-btn" onclick="goBack()" aria-label="Volver">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
         <div class="avatar">${initials(username)}</div>
         <div class="chat-top-name">${username}</div>
       </div>
