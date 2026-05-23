@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mensajes — Registro</title>
+  <link rel="stylesheet" href="css/auth.css" />
+</head>
+<body>
+  <div class="auth-container">
+    <div class="auth-card">
+      <div class="logo">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="10" fill="#378ADD"/>
+          <path d="M8 12C8 10.9 8.9 10 10 10H26C27.1 10 28 10.9 28 12V22C28 23.1 27.1 24 26 24H20L15 28V24H10C8.9 24 8 23.1 8 22V12Z" fill="white"/>
+        </svg>
+      </div>
+      <h1>Crear cuenta</h1>
+      <p class="subtitle">Únete a la plataforma</p>
+
+      <div id="errorMsg" class="error-msg hidden"></div>
+      <div id="successMsg" class="success-msg hidden"></div>
+
+      <form id="registerForm">
+        <div class="field">
+          <label for="username">Nombre de usuario</label>
+          <input type="text" id="username" placeholder="Tu nombre" required minlength="2"/>
+        </div>
+        <div class="field">
+          <label for="email">Correo electrónico</label>
+          <input type="email" id="email" placeholder="tu@correo.com" required autocomplete="email"/>
+        </div>
+        <div class="field">
+          <label for="password">Contraseña</label>
+          <input type="password" id="password" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password"/>
+        </div>
+        <button type="submit" id="registerBtn" class="btn-primary">
+          <span id="registerText">Registrarse</span>
+          <span id="registerSpinner" class="spinner hidden"></span>
+        </button>
+      </form>
+
+      <div class="divider"><span>¿Ya tienes cuenta?</span></div>
+      <button class="btn-secondary" onclick="window.location.href='index.html'">Iniciar sesión</button>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    document.getElementById('registerForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username').value.trim();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      setLoading(true, 'register');
+      const { data, error } = await supabaseClient.auth.signUp({
+        email, password,
+        options: { data: { username } }
+      });
+      setLoading(false, 'register');
+
+      if (error) {
+        showError(error.message);
+      } else {
+        // Insert profile
+        if (data.user) {
+          await supabaseClient.from('profiles').upsert({
+            id: data.user.id,
+            username,
+            email
+          });
+        }
+        showSuccess('Cuenta creada. Revisa tu correo para confirmar o inicia sesión directo.');
+        setTimeout(() => window.location.href = 'index.html', 2500);
+      }
+    });
+  </script>
+</body>
+</html>
