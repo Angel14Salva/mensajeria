@@ -204,7 +204,9 @@ async function openChat(convId, username) {
       <div class="messages-area" id="messagesArea"></div>
       <div id="emojiPickerWrap" style="display:none; border-top:0.5px solid var(--border);"></div>
       <div class="input-row">
-        <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">😊</button>
+        <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </button>
         <input type="text" class="msg-input" id="msgInput" placeholder="Escribe un mensaje..." autocomplete="off"/>
         <button class="send-btn" onclick="sendMessage()" aria-label="Enviar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -314,68 +316,52 @@ function saveRecentEmoji(emoji) {
   localStorage.setItem(RECENT_EMOJIS_KEY, JSON.stringify(recent));
 }
 
-function renderRecentEmojis(container, onPick) {
-  const recent = getRecentEmojis();
-  container.innerHTML = '';
-  if (!recent.length) { container.style.display = 'none'; return; }
-  container.style.display = 'block';
-  container.innerHTML = `
-    <div style="padding:6px 10px 2px;font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px;">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Recientes
-    </div>
-    <div style="display:flex;flex-wrap:wrap;padding:4px 6px 6px;">
-      ${recent.map(e => `<button class="re-emoji" data-e="${e}" style="background:none;border:none;font-size:1.3rem;padding:3px;cursor:pointer;border-radius:6px;">${e}</button>`).join('')}
-    </div>
-    <div style="height:0.5px;background:var(--border);margin:0 8px;"></div>
-  `;
-  container.querySelectorAll('.re-emoji').forEach(btn => {
-    btn.addEventListener('click', () => onPick(btn.dataset.e));
-  });
-}
-
 function setupEmojiPicker() {
   const btn = document.getElementById('emojiBtn');
   const wrap = document.getElementById('emojiPickerWrap');
   if (!btn || !wrap) return;
-  let picker = null;
   let open = false;
-  let recentEl = null;
 
   const onPick = (emoji) => {
     const input = document.getElementById('msgInput');
     if (input) { input.value += emoji; input.focus(); }
     saveRecentEmoji(emoji);
-    if (recentEl) renderRecentEmojis(recentEl, onPick);
+    renderPicker();
   };
+
+  function renderPicker() {
+    const recent = getRecentEmojis();
+    wrap.innerHTML = '';
+
+    if (!recent.length) {
+      wrap.innerHTML = '<div style="padding:16px;text-align:center;font-size:13px;color:var(--text-muted)">Aún no has usado emojis</div>';
+      return;
+    }
+
+    wrap.innerHTML = `
+      <div style="padding:8px 12px 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:var(--text-muted)">Usados recientemente</div>
+      <div id="recentGrid" style="display:flex;flex-wrap:wrap;padding:4px 8px 10px;gap:2px;"></div>
+    `;
+
+    const grid = wrap.querySelector('#recentGrid');
+    recent.forEach(e => {
+      const btn = document.createElement('button');
+      btn.textContent = e;
+      btn.style.cssText = 'background:none;border:none;font-size:1.5rem;padding:4px 5px;cursor:pointer;border-radius:6px;line-height:1;';
+      btn.addEventListener('click', () => onPick(e));
+      grid.appendChild(btn);
+    });
+  }
 
   btn.addEventListener('click', (e) => {
     e.stopPropagation();
-    if (!picker) {
-      // Recent emojis bar
-      recentEl = document.createElement('div');
-      wrap.appendChild(recentEl);
-
-      // Main picker
-      picker = document.createElement('emoji-picker');
-      picker.style.cssText = 'width:100%;--num-columns:7;--emoji-size:1.3rem;height:200px;';
-      picker.setAttribute('search-label', '');
-      wrap.appendChild(picker);
-
-      // Hide search bar via shadow DOM
-      picker.addEventListener('load', () => {
-        try {
-          const style = document.createElement('style');
-          style.textContent = '.search-wrapper { display: none !important; }';
-          picker.shadowRoot.appendChild(style);
-        } catch(err) {}
-      });
-
-      picker.addEventListener('emoji-click', (ev) => onPick(ev.detail.unicode));
-    }
     open = !open;
-    if (open) renderRecentEmojis(recentEl, onPick);
-    wrap.style.display = open ? 'block' : 'none';
+    if (open) {
+      renderPicker();
+      wrap.style.display = 'block';
+    } else {
+      wrap.style.display = 'none';
+    }
   });
 
   document.addEventListener('click', (e) => {
