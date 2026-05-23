@@ -211,7 +211,7 @@ async function openChat(convId, username) {
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
-        <div id="emojiPickerWrap" style="display:none;position:absolute;bottom:56px;left:0;right:0;z-index:100;"></div>
+        <div id="emojiPickerWrap" style="display:none;position:absolute;top:56px;left:0;right:0;z-index:100;"></div>
       </div>
     </div>
   `;
