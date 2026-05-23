@@ -8,6 +8,19 @@ async function init() {
   if (!session) { window.location.href = 'index.html'; return; }
   currentUser = session.user;
 
+let inactivityTimer;
+function resetTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(async () => {
+    await supabaseClient.auth.signOut();
+    window.location.href = 'index.html';
+  }, 30 * 60 * 1000);
+}
+['click', 'keydown', 'mousemove', 'touchstart'].forEach(e => {
+  document.addEventListener(e, resetTimer, true);
+});
+resetTimer();
+
   // Load username from profile
   const { data: profile } = await supabaseClient
     .from('profiles')
