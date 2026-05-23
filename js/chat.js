@@ -133,20 +133,33 @@ async function startConversation(otherUserId, otherUsername) {
   document.getElementById('searchInput').value = '';
   document.getElementById('searchResults').classList.add('hidden');
 
-  // Check if conversation already exists
-  const { data: existing } = await supabaseClient.rpc('find_conversation', {
-    user_a: currentUser.id,
-    user_b: otherUserId
-  });
+  // Find existing conversation manually (no RPC)
+  const { data: myConvs } = await supabaseClient
+    .from('conversation_members')
+    .select('conversation_id')
+    .eq('user_id', currentUser.id);
 
-  let convId = existing;
+  const { data: theirConvs } = await supabaseClient
+    .from('conversation_members')
+    .select('conversation_id')
+    .eq('user_id', otherUserId);
+
+  const myIds = new Set((myConvs || []).map(r => r.conversation_id));
+  const shared = (theirConvs || []).find(r => myIds.has(r.conversation_id));
+
+  let convId = shared?.conversation_id;
 
   if (!convId) {
-    const { data: newConv } = await supabaseClient
+    const { data: newConv, error } = await supabaseClient
       .from('conversations')
       .insert({})
       .select('id')
       .single();
+
+    if (error || !newConv) {
+      alert('Error al crear conversación: ' + (error?.message || 'desconocido'));
+      return;
+    }
 
     convId = newConv.id;
 
