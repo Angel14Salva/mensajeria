@@ -202,7 +202,8 @@ async function openChat(convId, username) {
         <div class="chat-top-name">${username}</div>
       </div>
       <div class="messages-area" id="messagesArea"></div>
-      <div class="input-row">
+      <div class="input-row" style="position:relative;">
+        <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">😊</button>
         <input type="text" class="msg-input" id="msgInput" placeholder="Escribe un mensaje..." autocomplete="off"/>
         <button class="send-btn" onclick="sendMessage()" aria-label="Enviar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -210,6 +211,7 @@ async function openChat(convId, username) {
             <polygon points="22 2 15 22 11 13 2 9 22 2"/>
           </svg>
         </button>
+        <div id="emojiPickerWrap" style="display:none;position:absolute;bottom:56px;left:0;right:0;z-index:100;"></div>
       </div>
     </div>
   `;
@@ -218,6 +220,7 @@ async function openChat(convId, username) {
     if (e.key === 'Enter') sendMessage();
   });
 
+  setupEmojiPicker();
   await loadMessages(convId);
   subscribeToMessages(convId);
 }
@@ -294,6 +297,37 @@ function subscribeToMessages(convId) {
       }
     })
     .subscribe();
+}
+
+// ─── Emoji Picker ────────────────────────────────────────────────────────────
+function setupEmojiPicker() {
+  const btn = document.getElementById('emojiBtn');
+  const wrap = document.getElementById('emojiPickerWrap');
+  if (!btn || !wrap) return;
+  let picker = null;
+  let open = false;
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (!picker) {
+      picker = document.createElement('emoji-picker');
+      picker.style.cssText = 'width:100%;--num-columns:8;--emoji-size:1.4rem;';
+      wrap.appendChild(picker);
+      picker.addEventListener('emoji-click', (ev) => {
+        const input = document.getElementById('msgInput');
+        if (input) { input.value += ev.detail.unicode; input.focus(); }
+      });
+    }
+    open = !open;
+    wrap.style.display = open ? 'block' : 'none';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.input-row')) {
+      wrap.style.display = 'none';
+      open = false;
+    }
+  });
 }
 
 // ─── Utils ───────────────────────────────────────────────────────────────────
