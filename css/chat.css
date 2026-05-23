@@ -82,3 +82,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   .bubble { max-width: 80%; }
   .sidebar-header { padding: 12px 14px; }
 }
+
+@media (max-width: 640px) {
+  .chat-view { height: 100dvh; }
+  .messages-area { flex: 1; min-height: 0; }
+}
