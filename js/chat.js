@@ -159,7 +159,7 @@ async function openChat(convId, username) {
 }
 
 async function loadMessages(convId) {
-  const { data, error } = await supabaseClient.from('messages').select('id, content, sender_id, created_at').eq('conversation_id', convId).order('created_at', { ascending: true });
+  const { data, error } = await supabaseClient.from('messages').select('id, content, sender_id, created_at, media_url, media_type').eq('conversation_id', convId).order('created_at', { ascending: true });
   if (error) return;
   const area = document.getElementById('messagesArea');
   if (!area) return;
