@@ -182,9 +182,19 @@ function appendMessageEl(area, msg) {
   let bubbleContent = '';
   if (msg.media_url) {
     if (msg.media_type && msg.media_type.startsWith('video')) {
-      bubbleContent = `<video src="${msg.media_url}" controls style="max-width:100%;max-height:220px;border-radius:8px;display:block;"></video>`;
+      bubbleContent = `
+        <video src="${msg.media_url}" controls style="max-width:100%;max-height:220px;border-radius:8px;display:block;"></video>
+        <a href="${msg.media_url}" download target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;color:inherit;opacity:0.75;text-decoration:none;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar
+        </a>`;
     } else {
-      bubbleContent = `<img src="${msg.media_url}" style="max-width:100%;max-height:220px;border-radius:8px;display:block;cursor:pointer;" onclick="window.open('${msg.media_url}','_blank')"/>`;
+      bubbleContent = `
+        <img src="${msg.media_url}" style="max-width:100%;max-height:220px;border-radius:8px;display:block;cursor:pointer;" onclick="window.open('${msg.media_url}','_blank')"/>
+        <a href="${msg.media_url}" download target="_blank" style="display:inline-flex;align-items:center;gap:5px;margin-top:5px;font-size:12px;color:inherit;opacity:0.75;text-decoration:none;">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar
+        </a>`;
     }
     if (msg.content) bubbleContent += `<div style="margin-top:4px;">${escapeHtml(msg.content)}</div>`;
   } else {
