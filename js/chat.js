@@ -222,7 +222,7 @@ async function openChat(convId, username, otherUserId) {
 }
 
 async function loadMessages(convId) {
-  const { data, error } = await supabaseClient.from('messages').select('id, content, sender_id, created_at, media_url, media_type').eq('conversation_id', convId).order('created_at', { ascending: true });
+  const { data, error } = await supabaseClient.from('messages').select('id, content, sender_id, created_at, media_url, media_type, read_at').eq('conversation_id', convId).order('created_at', { ascending: true });
   if (error) return;
   const area = document.getElementById('messagesArea');
   if (!area) return;
@@ -234,6 +234,13 @@ async function loadMessages(convId) {
     appendMessageEl(area, msg);
   }
   area.scrollTop = area.scrollHeight;
+
+  // Mark unread messages from the other person as read
+  await supabaseClient.from('messages')
+    .update({ read_at: new Date().toISOString() })
+    .eq('conversation_id', convId)
+    .neq('sender_id', currentUser.id)
+    .is('read_at', null);
 }
 
 function appendMessageEl(area, msg) {
@@ -241,6 +248,13 @@ function appendMessageEl(area, msg) {
   const timeStr = new Date(msg.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement('div');
   div.className = `msg-row ${mine ? 'mine' : ''}`;
+  div.dataset.msgId = msg.id;
+
+  // Checkmarks for sent messages
+  const checks = mine ? `
+    <span class="msg-checks" style="font-size:13px;margin-left:2px;${msg.read_at ? 'color:#378ADD;' : 'color:rgba(255,255,255,0.6);'}">
+      ${msg.read_at ? '✓✓' : '✓'}
+    </span>` : '';
 
   let bubbleContent = '';
   if (msg.media_url) {
@@ -267,7 +281,7 @@ function appendMessageEl(area, msg) {
   div.innerHTML = `
     ${!mine ? `<div class="msg-avatar">?</div>` : ''}
     <div class="bubble ${mine ? 'mine' : 'theirs'}">${bubbleContent}</div>
-    <div class="msg-time">${timeStr}</div>
+    <div class="msg-time">${timeStr}${checks}</div>
   `;
   area.appendChild(div);
 }
@@ -325,7 +339,20 @@ function subscribeToMessages(convId) {
         else if (payload.new.media_type) prev.textContent = '📷 Foto';
         else prev.textContent = payload.new.content;
       }
-    }).subscribe();
+      // Mark as read if it's from the other person
+      if (payload.new.sender_id !== currentUser.id) {
+        supabaseClient.from('messages').update({ read_at: new Date().toISOString() }).eq('id', payload.new.id);
+      }
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
+      // Update checkmark when message is read
+      const row = document.querySelector(`[data-msg-id="${payload.new.id}"]`);
+      if (row && payload.new.read_at) {
+        const checks = row.querySelector('.msg-checks');
+        if (checks) { checks.textContent = '✓✓'; checks.style.color = '#378ADD'; }
+      }
+    })
+    .subscribe();
 }
 
 // ─── Emoji Picker ─────────────────────────────────────────────────────────────
