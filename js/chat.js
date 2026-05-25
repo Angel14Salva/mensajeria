@@ -157,6 +157,10 @@ async function openChat(convId, username) {
       </div>
       <div class="input-row">
         <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">😊</button>
+        <label class="attach-btn" aria-label="Adjuntar">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+          <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none"/>
+        </label>
         <input type="text" class="msg-input" id="msgInput" placeholder="Escribe un mensaje..." autocomplete="off"/>
         <button class="send-btn" onclick="sendMessage()" aria-label="Enviar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
@@ -166,6 +170,7 @@ async function openChat(convId, username) {
   `;
 
   document.getElementById('msgInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+  document.getElementById('mediaInput').addEventListener('change', handleMediaUpload);
   setupEmojiPicker();
   await loadMessages(convId);
   subscribeToMessages(convId);
@@ -191,12 +196,56 @@ function appendMessageEl(area, msg) {
   const timeStr = new Date(msg.created_at).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
   const div = document.createElement('div');
   div.className = `msg-row ${mine ? 'mine' : ''}`;
+
+  let bubbleContent = '';
+  if (msg.media_url) {
+    if (msg.media_type && msg.media_type.startsWith('video')) {
+      bubbleContent = `<video src="${msg.media_url}" controls style="max-width:100%;max-height:220px;border-radius:8px;display:block;"></video>`;
+    } else {
+      bubbleContent = `<img src="${msg.media_url}" style="max-width:100%;max-height:220px;border-radius:8px;display:block;cursor:pointer;" onclick="window.open('${msg.media_url}','_blank')"/>`;
+    }
+    if (msg.content) bubbleContent += `<div style="margin-top:4px;">${escapeHtml(msg.content)}</div>`;
+  } else {
+    bubbleContent = escapeHtml(msg.content);
+  }
+
   div.innerHTML = `
     ${!mine ? `<div class="msg-avatar">?</div>` : ''}
-    <div class="bubble ${mine ? 'mine' : 'theirs'}">${escapeHtml(msg.content)}</div>
+    <div class="bubble ${mine ? 'mine' : 'theirs'}">${bubbleContent}</div>
     <div class="msg-time">${timeStr}</div>
   `;
   area.appendChild(div);
+}
+
+async function handleMediaUpload(e) {
+  const file = e.target.files[0];
+  if (!file || !currentConversationId) return;
+  e.target.value = '';
+
+  const area = document.getElementById('messagesArea');
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'msg-row mine';
+  loadingDiv.innerHTML = '<div class="bubble mine" style="opacity:0.6;font-size:12px;">Subiendo...</div>';
+  area.appendChild(loadingDiv);
+  area.scrollTop = area.scrollHeight;
+
+  const ext = file.name.split('.').pop();
+  const path = `${currentUser.id}/${Date.now()}.${ext}`;
+  const { data, error } = await supabaseClient.storage.from('chat-media').upload(path, file);
+
+  loadingDiv.remove();
+
+  if (error) { alert('Error al subir: ' + error.message); return; }
+
+  const { data: urlData } = supabaseClient.storage.from('chat-media').getPublicUrl(path);
+
+  await supabaseClient.from('messages').insert({
+    conversation_id: currentConversationId,
+    sender_id: currentUser.id,
+    content: '',
+    media_url: urlData.publicUrl,
+    media_type: file.type
+  });
 }
 
 async function sendMessage() {
