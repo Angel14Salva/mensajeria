@@ -1,6 +1,12 @@
 let currentUser = null;
 let currentConversationId = null;
 let realtimeChannel = null;
+let presenceChannel = null;
+
+async function updateLastSeen() {
+  if (!currentUser) return;
+  await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+}
 
 async function init() {
   const { data: { session } } = await supabaseClient.auth.getSession();
@@ -11,8 +17,17 @@ async function init() {
   const username = profile?.username || currentUser.email.split('@')[0];
   document.getElementById('myUsername').textContent = username;
   document.getElementById('myAvatar').textContent = initials(username);
-  // Update last_seen
-  await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+
+  // Update last_seen now and every 60 seconds
+  await updateLastSeen();
+  setInterval(updateLastSeen, 60 * 1000);
+
+  // Listen for profile changes (online/offline)
+  supabaseClient.channel('profiles-presence')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, () => {
+      loadConversations();
+    })
+    .subscribe();
 
   document.getElementById('logoutBtn').addEventListener('click', logout);
 
