@@ -77,11 +77,19 @@ async function loadConversations() {
     const conv = row.conversations;
     const other = conv.conversation_members.map(m => m.profiles).find(p => p.id !== currentUser.id);
     if (!other) continue;
+
+    // Check if online (last_seen within 2 minutes)
+    const { data: profile } = await supabaseClient.from('profiles').select('last_seen').eq('id', other.id).single();
+    const isOnline = profile?.last_seen && (new Date() - new Date(profile.last_seen)) < 2 * 60 * 1000;
+
     const item = document.createElement('div');
     item.className = 'chat-item';
     item.dataset.convId = conv.id;
     item.innerHTML = `
-      <div class="avatar">${initials(other.username)}</div>
+      <div style="position:relative;flex-shrink:0;">
+        <div class="avatar">${initials(other.username)}</div>
+        ${isOnline ? `<div style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid var(--sidebar-bg);"></div>` : ''}
+      </div>
       <div class="chat-item-info">
         <div class="chat-item-name">${other.username}</div>
         <div class="chat-item-preview" id="preview-${conv.id}">...</div>
@@ -160,10 +168,13 @@ async function openChat(convId, username, otherUserId) {
         <button class="back-btn" onclick="goBack()" aria-label="Volver">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
-        <div class="avatar">${initials(username)}</div>
+        <div style="position:relative;flex-shrink:0;">
+          <div class="avatar">${initials(username)}</div>
+          ${lastSeenText === 'En línea' ? `<div style="position:absolute;bottom:1px;right:1px;width:10px;height:10px;background:#22c55e;border-radius:50%;border:2px solid var(--surface);"></div>` : ''}
+        </div>
         <div>
           <div class="chat-top-name">${username}</div>
-          ${lastSeenText ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${lastSeenText}</div>` : ''}
+          ${lastSeenText ? `<div style="font-size:11px;color:${lastSeenText === 'En línea' ? '#22c55e' : 'var(--text-muted)'};margin-top:1px;">${lastSeenText}</div>` : ''}
         </div>
       </div>
       <div class="messages-area" id="messagesArea"></div>
