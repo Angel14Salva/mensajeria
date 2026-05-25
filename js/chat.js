@@ -93,9 +93,17 @@ async function loadConversations() {
     const other = conv.conversation_members.map(m => m.profiles).find(p => p.id !== currentUser.id);
     if (!other) continue;
 
-    // Check if online (last_seen within 2 minutes)
+    // Check if online (last_seen within 20 seconds)
     const { data: profile } = await supabaseClient.from('profiles').select('last_seen').eq('id', other.id).single();
     const isOnline = profile?.last_seen && (new Date() - new Date(profile.last_seen)) < 20 * 1000;
+    let lastSeenLabel = '';
+    if (profile?.last_seen) {
+      const diff = Math.floor((new Date() - new Date(profile.last_seen)) / 1000);
+      if (diff < 20) lastSeenLabel = '<div style="color:#22c55e;font-size:11px;margin-top:1px;">En línea</div>';
+      else if (diff < 3600) lastSeenLabel = `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Hace ${Math.floor(diff/60)} min</div>`;
+      else if (diff < 86400) lastSeenLabel = `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Hace ${Math.floor(diff/3600)} h</div>`;
+      else lastSeenLabel = `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">Últ. vez ${new Date(profile.last_seen).toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}</div>`;
+    }
 
     const item = document.createElement('div');
     item.className = 'chat-item';
@@ -108,6 +116,7 @@ async function loadConversations() {
       <div class="chat-item-info">
         <div class="chat-item-name">${other.username}</div>
         <div class="chat-item-preview" id="preview-${conv.id}">...</div>
+        ${lastSeenLabel}
       </div>
     `;
     item.addEventListener('click', () => openChat(conv.id, other.username, other.id));
