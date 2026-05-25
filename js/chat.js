@@ -91,9 +91,16 @@ async function loadConversations() {
 }
 
 async function loadPreview(convId) {
-  const { data } = await supabaseClient.from('messages').select('content').eq('conversation_id', convId).order('created_at', { ascending: false }).limit(1);
+  const { data } = await supabaseClient.from('messages').select('content, media_type').eq('conversation_id', convId).order('created_at', { ascending: false }).limit(1);
   const el = document.getElementById(`preview-${convId}`);
-  if (el) el.textContent = data?.[0]?.content || 'Sin mensajes aún';
+  if (!el) return;
+  if (data?.[0]) {
+    if (data[0].media_type?.startsWith('video')) el.textContent = '🎥 Video';
+    else if (data[0].media_type) el.textContent = '📷 Foto';
+    else el.textContent = data[0].content || 'Sin mensajes aún';
+  } else {
+    el.textContent = 'Sin mensajes aún';
+  }
 }
 
 async function startConversation(otherUserId, otherUsername) {
@@ -257,7 +264,11 @@ function subscribeToMessages(convId) {
       appendMessageEl(area, payload.new);
       area.scrollTop = area.scrollHeight;
       const prev = document.getElementById(`preview-${convId}`);
-      if (prev) prev.textContent = payload.new.content;
+      if (prev) {
+        if (payload.new.media_type?.startsWith('video')) prev.textContent = '🎥 Video';
+        else if (payload.new.media_type) prev.textContent = '📷 Foto';
+        else prev.textContent = payload.new.content;
+      }
     }).subscribe();
 }
 
