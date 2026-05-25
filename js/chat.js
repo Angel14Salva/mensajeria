@@ -18,9 +18,9 @@ async function init() {
   document.getElementById('myUsername').textContent = username;
   document.getElementById('myAvatar').textContent = initials(username);
 
-  // Update last_seen now and every 60 seconds
+  // Update last_seen now and every 10 seconds
   await updateLastSeen();
-  setInterval(updateLastSeen, 60 * 1000);
+  setInterval(updateLastSeen, 10 * 1000);
 
   // Listen for profile changes (online/offline)
   supabaseClient.channel('profiles-presence')
@@ -95,7 +95,7 @@ async function loadConversations() {
 
     // Check if online (last_seen within 2 minutes)
     const { data: profile } = await supabaseClient.from('profiles').select('last_seen').eq('id', other.id).single();
-    const isOnline = profile?.last_seen && (new Date() - new Date(profile.last_seen)) < 2 * 60 * 1000;
+    const isOnline = profile?.last_seen && (new Date() - new Date(profile.last_seen)) < 20 * 1000;
 
     const item = document.createElement('div');
     item.className = 'chat-item';
@@ -169,7 +169,7 @@ async function openChat(convId, username, otherUserId) {
       const d = new Date(profile.last_seen);
       const now = new Date();
       const diff = Math.floor((now - d) / 1000);
-      if (diff < 60) lastSeenText = 'En línea';
+      if (diff < 20) lastSeenText = 'En línea';
       else if (diff < 3600) lastSeenText = `Hace ${Math.floor(diff/60)} min`;
       else if (diff < 86400) lastSeenText = `Hace ${Math.floor(diff/3600)} h`;
       else lastSeenText = `Últ. vez ${d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}`;
