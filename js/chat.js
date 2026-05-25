@@ -11,6 +11,9 @@ async function init() {
   const username = profile?.username || currentUser.email.split('@')[0];
   document.getElementById('myUsername').textContent = username;
   document.getElementById('myAvatar').textContent = initials(username);
+  // Update last_seen
+  await supabaseClient.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id);
+
   document.getElementById('logoutBtn').addEventListener('click', logout);
 
   let inactivityTimer;
@@ -84,7 +87,7 @@ async function loadConversations() {
         <div class="chat-item-preview" id="preview-${conv.id}">...</div>
       </div>
     `;
-    item.addEventListener('click', () => openChat(conv.id, other.username));
+    item.addEventListener('click', () => openChat(conv.id, other.username, other.id));
     list.appendChild(item);
     loadPreview(conv.id);
   }
@@ -121,7 +124,7 @@ async function startConversation(otherUserId, otherUsername) {
     ]);
     loadConversations();
   }
-  openChat(convId, otherUsername);
+  openChat(convId, otherUsername, otherUserId);
 }
 
 function goBack() {
@@ -129,11 +132,26 @@ function goBack() {
   document.getElementById('mainArea').classList.remove('visible-mobile');
 }
 
-async function openChat(convId, username) {
+async function openChat(convId, username, otherUserId) {
   currentConversationId = convId;
   document.querySelectorAll('.chat-item').forEach(el => el.classList.toggle('active', el.dataset.convId === String(convId)));
   document.querySelector('.sidebar').classList.add('hidden-mobile');
   document.getElementById('mainArea').classList.add('visible-mobile');
+
+  // Fetch last_seen of other user
+  let lastSeenText = '';
+  if (otherUserId) {
+    const { data: profile } = await supabaseClient.from('profiles').select('last_seen').eq('id', otherUserId).single();
+    if (profile?.last_seen) {
+      const d = new Date(profile.last_seen);
+      const now = new Date();
+      const diff = Math.floor((now - d) / 1000);
+      if (diff < 60) lastSeenText = 'En línea';
+      else if (diff < 3600) lastSeenText = `Hace ${Math.floor(diff/60)} min`;
+      else if (diff < 86400) lastSeenText = `Hace ${Math.floor(diff/3600)} h`;
+      else lastSeenText = `Últ. vez ${d.toLocaleDateString('es-PE', { day: 'numeric', month: 'short' })}`;
+    }
+  }
 
   const main = document.getElementById('mainArea');
   main.innerHTML = `
@@ -143,7 +161,10 @@ async function openChat(convId, username) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
         </button>
         <div class="avatar">${initials(username)}</div>
-        <div class="chat-top-name">${username}</div>
+        <div>
+          <div class="chat-top-name">${username}</div>
+          ${lastSeenText ? `<div style="font-size:11px;color:var(--text-muted);margin-top:1px;">${lastSeenText}</div>` : ''}
+        </div>
       </div>
       <div class="messages-area" id="messagesArea"></div>
       <div class="input-row">
