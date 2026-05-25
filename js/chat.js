@@ -139,24 +139,7 @@ async function openChat(convId, username) {
         <div class="chat-top-name">${username}</div>
       </div>
       <div class="messages-area" id="messagesArea"></div>
-      <div id="epicker" class="epicker">
-        <div id="epGrid" class="epicker-grid"></div>
-        <div id="epCats" class="epicker-cats">
-          <button class="epicker-cat" data-cat="recent" title="Recientes">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          </button>
-          <button class="epicker-cat active" data-cat="0" title="Caritas">😀</button>
-          <button class="epicker-cat" data-cat="1" title="Gestos">👋</button>
-          <button class="epicker-cat" data-cat="2" title="Animales">🐶</button>
-          <button class="epicker-cat" data-cat="3" title="Comida">🍎</button>
-          <button class="epicker-cat" data-cat="4" title="Lugares">🏠</button>
-          <button class="epicker-cat" data-cat="5" title="Actividades">⚽</button>
-          <button class="epicker-cat" data-cat="6" title="Objetos">💡</button>
-          <button class="epicker-cat" data-cat="7" title="Símbolos">💯</button>
-        </div>
-      </div>
       <div class="input-row">
-        <button id="emojiBtn" class="emoji-btn" aria-label="Emojis">😊</button>
         <label class="attach-btn" aria-label="Adjuntar">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
           <input type="file" id="mediaInput" accept="image/*,video/*" style="display:none"/>
@@ -171,7 +154,6 @@ async function openChat(convId, username) {
 
   document.getElementById('msgInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
   document.getElementById('mediaInput').addEventListener('change', handleMediaUpload);
-  setupEmojiPicker();
   await loadMessages(convId);
   subscribeToMessages(convId);
 }
