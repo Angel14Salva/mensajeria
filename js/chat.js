@@ -322,7 +322,13 @@ async function sendMessage() {
   const content = input.value.trim();
   if (!content || !currentConversationId) return;
   input.value = '';
-  await supabaseClient.from('messages').insert({ conversation_id: currentConversationId, sender_id: currentUser.id, content });
+  const { data, error } = await supabaseClient.from('messages').insert({ conversation_id: currentConversationId, sender_id: currentUser.id, content }).select().single();
+  if (!error && data) {
+    const area = document.getElementById('messagesArea');
+    if (area) { appendMessageEl(area, data); area.scrollTop = area.scrollHeight; }
+    const prev = document.getElementById('preview-' + currentConversationId);
+    if (prev) prev.textContent = content;
+  }
 }
 
 function subscribeToMessages(convId) {
