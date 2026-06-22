@@ -335,6 +335,7 @@ function subscribeToMessages(convId) {
   if (realtimeChannel) supabaseClient.removeChannel(realtimeChannel);
   realtimeChannel = supabaseClient.channel(`messages:${convId}`)
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: `conversation_id=eq.${convId}` }, (payload) => {
+      if (payload.new.sender_id === currentUser.id) return;
       const area = document.getElementById('messagesArea');
       if (!area) return;
       appendMessageEl(area, payload.new);
