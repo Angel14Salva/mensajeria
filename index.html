@@ -1,25 +1,23 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Mensajes — Login</title>
-  <link rel="stylesheet" href="css/auth.css" />
+  <link rel="stylesheet" href="css/auth.css"/>
 </head>
 <body>
   <div class="auth-container">
     <div class="auth-card">
       <div class="logo">
-        <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
           <rect width="36" height="36" rx="10" fill="#378ADD"/>
           <path d="M8 12C8 10.9 8.9 10 10 10H26C27.1 10 28 10.9 28 12V22C28 23.1 27.1 24 26 24H20L15 28V24H10C8.9 24 8 23.1 8 22V12Z" fill="white"/>
         </svg>
       </div>
       <h1>Bienvenido</h1>
       <p class="subtitle">Inicia sesión para continuar</p>
-
       <div id="errorMsg" class="error-msg hidden"></div>
-
       <form id="loginForm">
         <div class="field">
           <label for="email">Correo electrónico</label>
@@ -34,32 +32,28 @@
           <span id="loginSpinner" class="spinner hidden"></span>
         </button>
       </form>
-
-      <div class="divider"><span>¿No tienes cuenta?</span></div>
-      <button class="btn-secondary" onclick="window.location.href='register.html'">Crear cuenta</button>
     </div>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="js/supabase.js"></script>
-  <script src="js/auth.js"></script>
-  <script>
-    // Redirect if already logged in
-    supabaseClient.auth.getSession().then(({ data }) => {
-      if (data.session) window.location.href = 'chat.html';
-    });
-
+  <script type="module">
+    import { auth } from './js/firebase.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    onAuthStateChanged(auth, (user) => { if (user) window.location.href = 'chat.html'; });
     document.getElementById('loginForm').addEventListener('submit', async (e) => {
       e.preventDefault();
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
-      setLoading(true);
-      const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
-      setLoading(false);
-      if (error) {
-        showError('Correo o contraseña incorrectos.');
-      } else {
+      const btn = document.getElementById('loginBtn');
+      const text = document.getElementById('loginText');
+      const spinner = document.getElementById('loginSpinner');
+      const errorMsg = document.getElementById('errorMsg');
+      btn.disabled = true; text.classList.add('hidden'); spinner.classList.remove('hidden'); errorMsg.classList.add('hidden');
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
         window.location.href = 'chat.html';
+      } catch (err) {
+        errorMsg.textContent = 'Correo o contraseña incorrectos.';
+        errorMsg.classList.remove('hidden');
+        btn.disabled = false; text.classList.remove('hidden'); spinner.classList.add('hidden');
       }
     });
   </script>
